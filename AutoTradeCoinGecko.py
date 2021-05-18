@@ -204,7 +204,9 @@ def sell_coin(ticker):
         
         # 5분 이동평균선 방향
         ma5_series = get_ma(sym,5)
-        ma5_diff = (ma5_series.iloc[-2] - ma5_series.iloc[-3])           
+        ma5_diff = (ma5_series.iloc[-2] - ma5_series.iloc[-3])      
+        # 20분 이동평균가
+        ma20 = get_ma(sym,20).iloc[-1]    
         # print(ma5_diff)
         # post_message(myToken,slackchannel, datetime.now().strftime('[%m/%d %H:%M:%S] ') + sym +" = "+ str(ma5_diff))
         # time.sleep(0.5)
@@ -216,7 +218,7 @@ def sell_coin(ticker):
         #                                                                   1.002 매도 잘하지만 가끔 손해(수수료)
         # 무조건 1.5%이상 손해나면 손절.
         if buy_price is not None:
-            if (ma5_diff < 0 and current_price > (buy_price * 1.0025)) or current_price < (buy_price * 0.985):    
+            if (ma5_diff <= 0 and current_price > (buy_price * 1.0025) and current_price <= ma20) or current_price < (buy_price * 0.985):    
                 if balance > 5000/current_price:
                     # 매도 주문 요청
                     upbit.sell_market_order(ticker, balance * 1)                    
