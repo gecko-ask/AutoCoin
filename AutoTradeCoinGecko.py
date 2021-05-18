@@ -224,8 +224,7 @@ def sell_coin(ticker):
                     upbit.sell_market_order(ticker, balance * 1)                    
                     time.sleep(3)
 
-                    post_message(myToken,slackchannel, datetime.now().strftime('[%m/%d %H:%M:%S] ') + "매도 조건 일치! : " + ticker + " = "
-                                                                                                + "C : " + str(current_price) + " | B : " + str(buy_price))
+                    post_message(myToken,slackchannel, datetime.now().strftime('[%m/%d %H:%M:%S] ') + "매도 조건 일치! : " + ticker + " = " + str(current_price-buy_price))
                     time.sleep(0.2)
                     geckoLogger.info('매도 주문 체결 완료 >> ' + ticker)
 
