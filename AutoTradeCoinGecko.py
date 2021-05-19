@@ -100,6 +100,7 @@ def buy_coin(ticker):
         geckoLogger.info('매수 함수 호출')
         global wish_list    # 함수 내에서 값 변경을 하기 위해 global로 지정    
         global bought_list      
+        global bought_time
         # if ticker in bought_list: # 매수 완료 종목이면 더 이상 안 사도록 함수 종료
         #     #printlog('code:', code, 'in', bought_list)
         #     return False
@@ -111,19 +112,15 @@ def buy_coin(ticker):
         # 이전에 이동평균선이 하향이었던 종목 구매  
 
         # 이전 이동평균선의 기울기 계산 
-        ma5_series = get_ma(sym,5)
-        ma10_series = get_ma(sym,10)
-        ma20_series = get_ma(sym,20)
-
-        ma5_diff = ma5_series.iloc[-2] - ma5_series.iloc[-3]
-        ma10_diff = ma10_series.iloc[-2] - ma10_series.iloc[-3]
-        ma20_diff = ma20_series.iloc[-2] - ma20_series.iloc[-3]
+        ma5_diff = get_ma(sym,5).diff()
+        ma10_diff = get_ma(sym,10).diff()
+        ma20_diff = get_ma(sym,20).diff()
 
         # geckoLogger.debug(" 매수 진입 >> " + str(ticker) + "|" + str(ma5_diff) + "|" + str(ma10_diff) + "|" + str(ma20_diff))
         
         # print(ma5_diff, ma10_diff, ma20_diff)
         
-        if ma5_diff > 0 and ma10_diff > 0 and ma20_diff > 0 and ticker in wish_list and bought_cnt[ticker] < maximum_buy_qty : 
+        if ma5_diff.iloc[-2] > 0 and ma10_diff.iloc[-2] > 0 and ma20_diff.iloc[-1] > 0 and ma5_diff.iloc[-1] > 0 and ticker in wish_list and bought_cnt[ticker] < maximum_buy_qty : 
             # 추가 매수 경우, 평단가가 현재가보다 낮으면 구매하지 않고, 위시리스트에서도 삭제.
             if bought_cnt[ticker] > 0 :
                 buy_price = get_buy_price(ticker)    # 매수 가격
@@ -166,6 +163,8 @@ def buy_coin(ticker):
             # geckoLogger.debug(" 매수 주문 완료 >> " + str(ticker) + "|" + str(current_price))   
 
             bought_cnt[ticker] += 1
+            # 매수 시간 기록
+            bought_time[ticker] = now()
             
             if ticker not in bought_list:
                 bought_list.append(ticker)
@@ -200,31 +199,33 @@ def sell_coin(ticker):
         buy_price = get_buy_price(ticker)    # 평단가
 
         balance = get_balance(ticker)
-
         
         # 5분 이동평균선 방향
         ma5_series = get_ma(sym,5)
         ma5_diff = (ma5_series.iloc[-2] - ma5_series.iloc[-3])      
         # 20분 이동평균가
         ma20 = get_ma(sym,20).iloc[-1]    
-        # print(ma5_diff)
-        # post_message(myToken,slackchannel, datetime.now().strftime('[%m/%d %H:%M:%S] ') + sym +" = "+ str(ma5_diff))
-        # time.sleep(0.5)
-        # post_message(myToken,slackchannel, datetime.now().strftime('[%m/%d %H:%M:%S] ') + "Wish list : " + str(wish_list))  
 
-        # geckoLogger.debug(" 매도 진입 >> " + str(ticker) + "|" + str(ma5_diff))
+        time_limit = datetime.now() - timedelta(minutes=10)
+        if bought_time[ticker] < time_limit:
+            forced_sell_flag = 1
+        else:
+            forced_sell_flag = 0
 
         # 매도 조건 - 구매한 항목일 경우 / 이동평균선 보다 현재가가 낮은 경우 / 평단가의 0.25퍼센트 이상의 가격일 경우
         #                                                                   1.002 매도 잘하지만 가끔 손해(수수료)
         # 무조건 1.5%이상 손해나면 손절.
         if buy_price is not None:
-            if (ma5_diff <= 0 and current_price > (buy_price * 1.0025) and current_price <= ma20) or current_price < (buy_price * 0.985):    
+            if (ma5_diff <= 0 and current_price > (buy_price * 1.0025) and current_price <= ma20) or current_price < (buy_price * 0.985) and forced_sell_flag == 1:    
                 if balance > 5000/current_price:
+                    
+
                     # 매도 주문 요청
                     upbit.sell_market_order(ticker, balance * 1)                    
                     time.sleep(3)
 
-                    post_message(myToken,slackchannel, datetime.now().strftime('[%m/%d %H:%M:%S] ') + "매도 조건 일치! : " + ticker + " = " + str(current_price-buy_price))
+                    result = (current_price-buy_price)/buy_price * 100
+                    post_message(myToken,slackchannel, datetime.now().strftime('[%m/%d %H:%M:%S] ') + "매도 조건 일치! : " + ticker + "결과 = " + str(result)+" %")
                     time.sleep(0.2)
                     geckoLogger.info('매도 주문 체결 완료 >> ' + ticker)
 
@@ -323,6 +324,7 @@ ticker_list = ['KRW-BTC', 'KRW-ETH', 'KRW-DOGE', 'KRW-ETC', 'KRW-QTUM']
 
 bought_list = []     # 매수 완료된 종목 리스트
 bought_cnt = {}     # 매수 횟수 딕셔너리
+bought_time = {}     # 매수 시간 딕셔너리
 wish_list = []      # 이동평균선이 하향했던 종목 리스트
 maximum_buy_qty = 2 # 최대 추가 매수 횟수
 target_count = len(ticker_list) # 매수할 종목 수
