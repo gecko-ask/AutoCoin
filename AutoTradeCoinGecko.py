@@ -206,18 +206,21 @@ def sell_coin(ticker):
         # 20분 이동평균가
         ma20 = get_ma(sym,20).iloc[-1]    
 
-        time_limit = datetime.now() - timedelta(minutes=10)
-        if bought_time[ticker] < time_limit:
-            forced_sell_flag = 1
-        else:
-            forced_sell_flag = 0
+
 
         # 매도 조건 - 구매한 항목일 경우 / 이동평균선 보다 현재가가 낮은 경우 / 평단가의 0.25퍼센트 이상의 가격일 경우
         #                                                                   1.002 매도 잘하지만 가끔 손해(수수료)
-        # 무조건 1.5%이상 손해나면 손절.
+        # 매수 10분 후 1.5%이상 손해나면 손절.
         if buy_price is not None:
-            if (ma5_diff <= 0 and current_price > (buy_price * 1.0025) and current_price <= ma20) or current_price < (buy_price * 0.985) and forced_sell_flag == 1:    
+            if (ma5_diff <= 0 and current_price > (buy_price * 1.0025) and current_price <= ma20) or current_price < (buy_price * 0.985) :    
                 if balance > 5000/current_price:
+
+                    time_limit = datetime.now() - timedelta(minutes=10)
+                    if bought_time[ticker] != 0 and current_price < (buy_price * 0.985):
+                        if bought_time[ticker] > time_limit:
+                            return False                            
+                    
+                    
                     
                     # 매도 주문 요청
                     upbit.sell_market_order(ticker, balance * 1)                    
@@ -361,6 +364,8 @@ while True:
 
         # if start_time < now < end_time - timedelta(seconds=59):
         for sym in ticker_list:
+            # 매수 시간 딕셔너리 초기화
+            bought_time[sym] = 0
             # 이동평균선의 기울기 계산
             # (1분전 종가 - 4분전 종가) / 1분전 종가 * 100
             previous_price = get_pre_price(sym)
