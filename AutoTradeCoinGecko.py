@@ -219,7 +219,6 @@ def sell_coin(ticker):
             if (ma5_diff <= 0 and current_price > (buy_price * 1.0025) and current_price <= ma20) or current_price < (buy_price * 0.985) and forced_sell_flag == 1:    
                 if balance > 5000/current_price:
                     
-
                     # 매도 주문 요청
                     upbit.sell_market_order(ticker, balance * 1)                    
                     time.sleep(3)
