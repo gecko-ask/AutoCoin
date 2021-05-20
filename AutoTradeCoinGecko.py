@@ -120,7 +120,7 @@ def buy_coin(ticker):
         
         # print(ma5_diff, ma10_diff, ma20_diff)
         
-        if ma5_diff.iloc[-2] > 0 and ma10_diff.iloc[-2] > 0 and ma20_diff.iloc[-1] > 0 and ma5_diff.iloc[-1] > 0 and ticker in wish_list and bought_cnt[ticker] < maximum_buy_qty : 
+        if ma5_diff.iloc[-2] > 0 and ma10_diff.iloc[-2] > 0 and ma20_diff.iloc[-1] >= 0 and ma5_diff.iloc[-1] > 0 and ticker in wish_list and bought_cnt[ticker] < maximum_buy_qty : 
             # 추가 매수 경우, 평단가가 현재가보다 낮으면 구매하지 않고, 위시리스트에서도 삭제.
             if bought_cnt[ticker] > 0 :
                 buy_price = get_buy_price(ticker)    # 매수 가격
@@ -164,7 +164,7 @@ def buy_coin(ticker):
 
             bought_cnt[ticker] += 1
             # 매수 시간 기록
-            bought_time[ticker] = datetime.now()
+            # bought_time[ticker] = datetime.now()
             
             if ticker not in bought_list:
                 bought_list.append(ticker)
@@ -211,13 +211,13 @@ def sell_coin(ticker):
         #                                                                   1.002 매도 잘하지만 가끔 손해(수수료)
         # 매수 10분 후 1.5%이상 손해나면 손절.
         if buy_price is not None:
-            if (ma5_diff <= 0 and current_price > (buy_price * 1.0025) and current_price <= ma20) or current_price < (buy_price * 0.985) :    
+            if (ma5_diff <= 0 and current_price > (buy_price * 1.0025) and current_price <= ma20):    
                 if balance > 5000/current_price:
 
-                    time_limit = datetime.now() - timedelta(minutes=10)
-                    if bought_time[ticker] != 0 and current_price < (buy_price * 0.985):
-                        if bought_time[ticker] > time_limit:
-                            return False                            
+                    # time_limit = datetime.now() - timedelta(minutes=10)
+                    # if bought_time[ticker] != 0 and current_price < (buy_price * 0.985):
+                    #     if bought_time[ticker] > time_limit:
+                    #         return False                            
                     
                     
                     
@@ -325,7 +325,7 @@ ticker_list = ['KRW-BTC', 'KRW-ETH', 'KRW-DOGE', 'KRW-ETC', 'KRW-QTUM']
 
 bought_list = []     # 매수 완료된 종목 리스트
 bought_cnt = {}     # 매수 횟수 딕셔너리
-bought_time = {}     # 매수 시간 딕셔너리
+# bought_time = {}     # 매수 시간 딕셔너리
 wish_list = []      # 이동평균선이 하향했던 종목 리스트
 maximum_buy_qty = 2 # 최대 추가 매수 횟수
 target_count = len(ticker_list) # 매수할 종목 수
@@ -364,7 +364,7 @@ while True:
         # if start_time < now < end_time - timedelta(seconds=59):
         for sym in ticker_list:
             # 매수 시간 딕셔너리 초기화
-            bought_time[sym] = 0
+            # bought_time[sym] = 0
             # 이동평균선의 기울기 계산
             # (1분전 종가 - 4분전 종가) / 1분전 종가 * 100
             previous_price = get_pre_price(sym)
