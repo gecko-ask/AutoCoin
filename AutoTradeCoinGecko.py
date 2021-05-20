@@ -164,7 +164,7 @@ def buy_coin(ticker):
 
             bought_cnt[ticker] += 1
             # 매수 시간 기록
-            bought_time[ticker] = now()
+            bought_time[ticker] = datetime.now()
             
             if ticker not in bought_list:
                 bought_list.append(ticker)
@@ -184,8 +184,7 @@ def buy_coin(ticker):
             # # 구매수량이 5000원(최소거래금액)이상일 경우엔 구매리스트에 추가하여 더 이상 구매하지 않음
             # if bought_qty > 5000/current_price:
                               
-            #     # print(bought_list)
-            
+            #     # print(bought_list)            
                 
     except Exception as ex:
         print(datetime.now().strftime('[%m/%d %H:%M:%S] ') + str(ticker) + " 매수 >> " + str(ex))
